@@ -12,6 +12,7 @@ build/
 
 # ── Environment & Secrets ────────────────────────────────────
 .env
+.env.production
 .env.*
 !.env.example
 *.local
