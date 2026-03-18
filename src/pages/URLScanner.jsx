@@ -54,7 +54,17 @@ const URLScanner = () => {
       setUrl("");
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.detail || "Scanning failed.");
+
+      if (err.response?.status === 422) {
+        const detail = err.response?.data?.detail;
+        const backendMessage = Array.isArray(detail)
+          ? detail.map((item) => item?.msg).filter(Boolean).join("\n")
+          : detail;
+
+        alert(backendMessage || "Invalid URL format. Try https://example.com");
+      } else {
+        alert(err.message || err.response?.data?.detail || "Scanning failed.");
+      }
     } finally {
       setIsLoading(false);
     }
