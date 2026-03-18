@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Security Platform</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-cookie/3.0.5/js.cookie.min.js"></script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'primary-dark': '#1A1C20',
+              'secondary-dark': '#2E3034',
+              'accent-cyber': '#00F0FF',
+              'threat-high': '#FF4D4D',
+              'threat-medium': '#FFC400',
+              'threat-low': '#00D1FF',
+            },
+            animation: {
+              'pulse-alert': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            },
+          },
+        },
+      }
+    </script>
+    <style>
+      /* Base styles for custom classes */
+      .btn-primary { background-color: #00F0FF; color: #1A1C20; font-weight: 700; padding: 0.75rem 1rem; border-radius: 0.5rem; transition: all 0.2s; }
+      .input-cyber { width: 100%; padding: 0.75rem; background-color: #1A1C20; border: 1px solid #4B5563; border-radius: 0.5rem; transition: border-color 0.15s ease-in-out; }
+      .input-cyber:focus { outline: none; border-color: #00F0FF; box-shadow: 0 0 0 1px #00F0FF; }
+    </style>
+  </head>
+  <body class="bg-primary-dark">
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script> 
+  </body>
+</html>
