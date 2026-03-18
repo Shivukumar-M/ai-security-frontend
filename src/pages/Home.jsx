@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import MatrixRain from "../components/MatrixRain";
 import {
   BrainCircuit,
   CircleCheckBig,
@@ -39,7 +40,55 @@ const modules = [
   },
 ];
 
+const DECRYPT_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#@!$%";
+
+function useDecryptText(target, delay = 0) {
+  const [value, setValue] = useState("");
+
+  useEffect(() => {
+    let frame = 0;
+    let intervalId;
+    let timeoutId;
+
+    const run = () => {
+      intervalId = setInterval(() => {
+        frame += 1;
+        const revealed = frame / 1.6;
+
+        const next = target
+          .split("")
+          .map((char, index) => {
+            if (char === " ") return " ";
+            if (index < revealed) return target[index];
+            return DECRYPT_CHARS[Math.floor(Math.random() * DECRYPT_CHARS.length)];
+          })
+          .join("");
+
+        setValue(next);
+
+        if (revealed >= target.length) {
+          clearInterval(intervalId);
+          setValue(target);
+        }
+      }, 32);
+    };
+
+    timeoutId = setTimeout(run, delay);
+
+    return () => {
+      clearInterval(intervalId);
+      clearTimeout(timeoutId);
+    };
+  }, [target, delay]);
+
+  return value || target;
+}
+
 function Home() {
+  const decryptLine1 = useDecryptText("AI-Powered", 110);
+  const decryptLine2 = useDecryptText("Cybersecurity Threat", 400);
+  const decryptLine3 = useDecryptText("Detection", 700);
+
   return (
     <div className="relative isolate min-h-screen overflow-x-hidden bg-[#020202] text-white selection:bg-cyan-300 selection:text-black">
       {/* Cyber background for top area */}
@@ -79,12 +128,12 @@ function Home() {
             Next-Gen Neural Defense Active
           </div>
 
-          <h1 className="hero-title max-w-4xl text-5xl font-black leading-[0.95] md:text-7xl">
-            AI-Powered
+          <h1 className="hero-title max-w-7xl text-5xl font-black leading-[0.95] md:text-7xl">
+            <span className="hero-decrypt-line whitespace-nowrap">{decryptLine1}</span>
             <br />
-            <span className="text-cyan-300">Cybersecurity</span> Threat
+            <span className="hero-decrypt-line whitespace-nowrap text-cyan-300">{decryptLine2}</span>
             <br />
-            Detection
+            <span className="hero-decrypt-line whitespace-nowrap hero-decrypt-final">{decryptLine3}</span>
           </h1>
 
           <p className="mt-5 max-w-2xl text-sm text-gray-300 md:text-base">
@@ -108,11 +157,11 @@ function Home() {
           </div>
 
           <div className="mt-10 rounded-2xl border border-cyan-500/20 bg-[#061018]/75 p-3 shadow-[0_25px_100px_rgba(0,0,0,0.55)]">
-            <img
-              src="https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=1400&q=80"
-              className="hero-image h-[230px] w-full rounded-xl object-cover opacity-85 md:h-[330px]"
-              alt="Cybersecurity operations dashboard"
-            />
+            <div className="relative h-[230px] w-full overflow-hidden rounded-xl md:h-[330px]">
+              <MatrixRain />
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_35%,rgba(0,0,0,0.6)_100%)]" />
+              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.45)_0%,transparent_35%,rgba(0,0,0,0.35)_100%)]" />
+            </div>
             <div className="mt-3 flex items-center justify-between px-2 text-xs text-cyan-200/80">
               <span>Encrypted network telemetry stream</span>
               <span className="text-2xl font-black text-white">99.9%</span>
@@ -192,7 +241,7 @@ function Home() {
 
             <div className="rounded-2xl border border-cyan-500/20 bg-[#071018]/70 p-4">
               <img
-                src="https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=1200&q=80"
+                src="./landing.png?auto=format&fit=crop&w=1200&q=80"
                 className="feature-image h-[360px] w-full rounded-xl object-cover opacity-85"
                 alt="Malware detection and cybersecurity analysis"
               />
@@ -309,6 +358,11 @@ function Home() {
           to { opacity: 1; transform: translateY(0); }
         }
 
+        @keyframes decryptCursor {
+          0%, 45% { opacity: 1; }
+          46%, 100% { opacity: 0; }
+        }
+
         .bg-base {
           background: linear-gradient(180deg, #020202 0%, #050505 100%);
         }
@@ -335,6 +389,25 @@ function Home() {
 
         .hero-title {
           animation: titlePulse 6s ease-in-out infinite;
+        }
+
+        .hero-decrypt-line {
+          position: relative;
+          display: inline-block;
+          letter-spacing: 0.01em;
+        }
+
+        .hero-decrypt-line::after {
+          content: "_";
+          margin-left: 0.16em;
+          color: rgba(34, 211, 238, 0.85);
+          animation: decryptCursor 0.9s steps(1, end) infinite;
+        }
+
+        .hero-decrypt-final::after {
+          content: "";
+          margin-left: 0;
+          animation: none;
         }
 
         .hero-image {

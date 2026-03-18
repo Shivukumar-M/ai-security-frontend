@@ -1,9 +1,9 @@
 // frontend/src/pages/FileScanner.jsx
 import React, { useState, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
-import api from "../api/config.js";
 import Loader from "../components/Loader.jsx";
 import { useNavigate } from "react-router-dom";
+import { useScanState } from "../context/ScanStateContext.jsx";
 
 import {
   FileText,
@@ -17,16 +17,13 @@ import {
 
 const FileScanner = () => {
   const navigate = useNavigate();
+  const { fileState, startFileScan, clearFileState } = useScanState();
+  const { isLoading, result, error } = fileState;
 
+  // Local state: dropzone file selection and history list
   const [file, setFile] = useState(null);
-  const [result, setResult] = useState(null);
-
-  // ⭐ History
   const [history, setHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
-
-  const [error, setError] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
 
   /* -----------------------------------
       LOAD HISTORY ONCE
@@ -37,13 +34,21 @@ const FileScanner = () => {
   }, []);
 
   /* -----------------------------------
-      SAVE HISTORY ITEM
+      PERSIST RESULT TO HISTORY
+      Runs when a scan finishes — even if
+      the user navigated away and came back.
   ----------------------------------- */
-  const saveHistory = (entry) => {
-    const updated = [entry, ...history];
-    setHistory(updated);
-    localStorage.setItem("file_scan_history", JSON.stringify(updated));
-  };
+  useEffect(() => {
+    if (result && !isLoading) {
+      setHistory(prev => {
+        const alreadyIn = prev.some(h => h.id === result.id);
+        if (alreadyIn) return prev;
+        const updated = [result, ...prev];
+        localStorage.setItem("file_scan_history", JSON.stringify(updated));
+        return updated;
+      });
+    }
+  }, [result, isLoading]);
 
   /* -----------------------------------
       DELETE ONE ITEM
@@ -63,13 +68,16 @@ const FileScanner = () => {
   };
 
   /* -----------------------------------
+      SAVE HISTORY ITEM (legacy compat)
+  ----------------------------------- */
+  // (history persistence is handled by the useEffect above)
+
+  /* -----------------------------------
       DROPZONE
   ----------------------------------- */
   const onDrop = (acceptedFiles) => {
     if (acceptedFiles.length) {
       setFile(acceptedFiles[0]);
-      setError(null);
-      setResult(null);
     }
   };
 
@@ -82,28 +90,10 @@ const FileScanner = () => {
       SCAN FILE
   ----------------------------------- */
   const handleScan = async () => {
-    if (!file) return setError("Please upload a file.");
-
-    setIsLoading(true);
-    setResult(null);
-    setError(null);
-
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const res = await api.post("/filescan/", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      setResult(res.data);
-      saveHistory(res.data);
-
-    } catch (err) {
-      setError(err.response?.data?.detail || "File scan failed.");
-    } finally {
-      setIsLoading(false);
-    }
+    if (!file) return;
+    const fileToScan = file;
+    setFile(null); // clear selection immediately
+    startFileScan(fileToScan); // fires and forgets — result stored in context
   };
 
   return (
@@ -162,14 +152,22 @@ const FileScanner = () => {
       </div>
 
       {/* ERROR */}
-      {error && (
-        <div className="p-4 bg-red-900/40 border border-red-600 rounded text-red-300">
-          ⚠ {error}
+      {error && !isLoading && (
+        <div className="p-4 bg-red-900/40 border border-red-600 rounded text-red-300 flex justify-between items-center">
+          <span>⚠ {error}</span>
+          <button onClick={clearFileState} className="text-xs text-red-400 hover:text-red-200 underline">Dismiss</button>
         </div>
       )}
 
       {/* RESULT */}
-      {result && <FileScanResult result={result} />}
+      {result && !isLoading && (
+        <>
+          <div className="flex justify-end">
+            <button onClick={clearFileState} className="text-xs text-gray-400 hover:text-cyan-300 underline">Clear result</button>
+          </div>
+          <FileScanResult result={result} />
+        </>
+      )}
 
       {/* HISTORY SECTION */}
       {showHistory && (

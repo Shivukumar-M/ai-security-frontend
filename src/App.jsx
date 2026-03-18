@@ -21,6 +21,7 @@ import Profile from './pages/Profile.jsx';
 
 import Layout from './components/Layout.jsx';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
+import { ScanStateProvider } from './context/ScanStateContext.jsx';
 
 // NEW: Global IDS watcher (alerts on ANY page)
 import IDSGlobalWatcher from "./components/IDSGlobalWatcher.jsx";
@@ -33,8 +34,9 @@ const AuthFallbackRoute = () => {
 function App() {
   return (
     <AuthProvider>
-      <Router>
-         <IDSGlobalWatcher />
+      <ScanStateProvider>
+        <Router>
+           <IDSGlobalWatcher />
         <Routes>
 
           {/* Public Home (full screen, no layout) */}
@@ -86,6 +88,7 @@ function App() {
           <Route path="*" element={<AuthFallbackRoute />} />
         </Routes>
       </Router>
+    </ScanStateProvider>
     </AuthProvider>
   );
 }

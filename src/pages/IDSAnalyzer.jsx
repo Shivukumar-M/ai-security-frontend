@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { useNavigate } from "react-router-dom";
 import api from "../api/config.js";
-import Loader from "../components/Loader.jsx";
+import { useScanState } from "../context/ScanStateContext.jsx";
 
 import {
   ShieldAlert,
@@ -19,13 +19,12 @@ import {
 
 const IDSAnalyzer = () => {
   const navigate = useNavigate();
+  const { idsState, startIdsScan, clearIdsState } = useScanState();
+  const { isLoading, result, error } = idsState;
 
+  // Local state: dropzone file, log type selector, and history panel
   const [file, setFile] = useState(null);
   const [logType, setLogType] = useState("Mixed");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [result, setResult] = useState(null);
-
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -61,29 +60,14 @@ const IDSAnalyzer = () => {
   });
 
   const runAnalysis = async (data) => {
-    try {
-      setIsLoading(true);
-      setError("");
-      setResult(null);
-
-      const formData = new FormData();
-      if (data.file) {
-        formData.append("file", data.file);
-      } else {
-        formData.append("log_type", data.log_type);
-        formData.append("count", String(data.count));
-      }
-
-      const res = await api.post("/ids/analyze", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      setResult(res.data);
-    } catch (err) {
-      setError(err.response?.data?.detail || "IDS Scan Failed");
-    } finally {
-      setIsLoading(false);
+    const formData = new FormData();
+    if (data.file) {
+      formData.append("file", data.file);
+    } else {
+      formData.append("log_type", data.log_type);
+      formData.append("count", String(data.count));
     }
+    startIdsScan(formData); // fires and forgets — result stored in context
   };
 
   return (
@@ -211,30 +195,24 @@ const IDSAnalyzer = () => {
       </div>
 
       {/* ERROR */}
-      {error && (
+      {error && !isLoading && (
         <div className="p-4 bg-red-900/30 border border-red-600 
-                        text-red-300 rounded-lg">
-          ⚠ {error}
-        </div>
-      )}
-
-      {/* LOADING */}
-      {isLoading && (
-        <div className="text-center mt-10">
-          <Loader />
-          <p className="text-gray-300 mt-2">
-            Analyzing network traffic…
-          </p>
+                        text-red-300 rounded-lg flex justify-between items-center">
+          <span>⚠ {error}</span>
+          <button onClick={clearIdsState} className="text-xs text-red-400 hover:text-red-200 underline">Dismiss</button>
         </div>
       )}
 
       {/* RESULT */}
-      {result && (
+      {result && !isLoading && (
         <div className="p-6 bg-primary-dark border border-gray-700 
                         rounded-xl shadow-xl space-y-4">
-          <h2 className="text-xl text-cyan-300 font-bold">
-            ✔ Scan Complete
-          </h2>
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl text-cyan-300 font-bold">
+              ✔ Scan Complete
+            </h2>
+            <button onClick={clearIdsState} className="text-xs text-gray-400 hover:text-cyan-300 underline">Clear result</button>
+          </div>
 
           <p className="text-gray-300">
             Packets: <span className="text-white">{result.total_packets}</span>

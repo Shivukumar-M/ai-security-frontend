@@ -1,9 +1,10 @@
 // frontend/src/pages/URLScanner.jsx
 import React, { useState, useEffect } from "react";
-import { scanUrl, getUrlScanHistory } from "../api/urlscan.js";
+import { getUrlScanHistory } from "../api/urlscan.js";
 import apiClient from "../api/config.js";     // ⭐ REQUIRED for delete
 import Loader from "../components/Loader.jsx";
 import { useNavigate } from "react-router-dom";
+import { useScanState } from "../context/ScanStateContext.jsx";
 
 import {
   Zap,
@@ -20,15 +21,23 @@ import {
 
 const URLScanner = () => {
   const navigate = useNavigate();
+  const { urlState, startUrlScan, clearUrlState } = useScanState();
+  const { isLoading, result, error } = urlState;
 
+  // Local state: just the text input and history table
   const [url, setUrl] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState(null);
   const [history, setHistory] = useState([]);
 
   useEffect(() => {
     loadHistory();
   }, []);
+
+  // When a scan completes (even if user was away), refresh history from backend
+  useEffect(() => {
+    if (result && !isLoading) {
+      loadHistory();
+    }
+  }, [result, isLoading]);
 
   const loadHistory = async () => {
     try {
@@ -42,32 +51,10 @@ const URLScanner = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!url.trim()) return;
-
-    setIsLoading(true);
-    setResult(null);
-
-    try {
-      const data = await scanUrl(url);
-      setResult(data);
-      setHistory((prev) => [data, ...(Array.isArray(prev) ? prev : [])]);
-      setUrl("");
-    } catch (err) {
-      console.error(err);
-
-      if (err.response?.status === 422) {
-        const detail = err.response?.data?.detail;
-        const backendMessage = Array.isArray(detail)
-          ? detail.map((item) => item?.msg).filter(Boolean).join("\n")
-          : detail;
-
-        alert(backendMessage || "Invalid URL format. Try https://example.com");
-      } else {
-        alert(err.message || err.response?.data?.detail || "Scanning failed.");
-      }
-    } finally {
-      setIsLoading(false);
-    }
+    if (!url.trim() || isLoading) return;
+    const scannedUrl = url;
+    setUrl(""); // clear input immediately
+    startUrlScan(scannedUrl); // fires and forgets — result stored in context
   };
 
   return (
@@ -100,7 +87,21 @@ const URLScanner = () => {
       </form>
 
       {/* SCAN RESULT */}
-      {result && <ScanResult result={result} />}
+      {error && !isLoading && (
+        <div className="p-4 bg-red-900/30 border border-red-600 text-red-300 rounded-xl flex justify-between items-center">
+          <span>⚠ {error}</span>
+          <button onClick={clearUrlState} className="text-xs text-red-400 hover:text-red-200 underline">Dismiss</button>
+        </div>
+      )}
+
+      {result && !isLoading && (
+        <>
+          <div className="flex justify-end">
+            <button onClick={clearUrlState} className="text-xs text-gray-400 hover:text-cyan-300 underline">Clear result</button>
+          </div>
+          <ScanResult result={result} />
+        </>
+      )}
 
       {/* HISTORY */}
       <HistorySection history={history} setHistory={setHistory} />

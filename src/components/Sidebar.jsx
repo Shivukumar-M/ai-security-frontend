@@ -8,6 +8,7 @@ import {
   BookOpen,
   House,
 } from "lucide-react";
+import { useScanState } from "../context/ScanStateContext.jsx";
 
 const navItems = [
   { name: "Home", path: "/", icon: House },
@@ -19,6 +20,15 @@ const navItems = [
 
 const Sidebar = () => {
   const location = useLocation();
+  const { urlState, fileState, idsState, ragState } = useScanState();
+
+  // Map route paths → whether a background scan is in progress
+  const scanningMap = {
+    "/scanner":  urlState.isLoading,
+    "/filescan": fileState.isLoading,
+    "/ids":      idsState.isLoading,
+    "/rag":      ragState.isLoading,
+  };
 
   return (
     <aside
@@ -55,6 +65,7 @@ const Sidebar = () => {
         <ul className="space-y-2">
           {navItems.map((item) => {
             const active = location.pathname === item.path;
+            const scanning = scanningMap[item.path] && !active;
             return (
               <li key={item.name}>
                 <Link
@@ -65,7 +76,14 @@ const Sidebar = () => {
                     }`}
                 >
                   <item.icon className="w-5 h-5" />
-                  <span>{item.name}</span>
+                  <span className="flex-1">{item.name}</span>
+                  {/* Pulsing badge: scan running on this page while user is elsewhere */}
+                  {scanning && (
+                    <span className="flex h-2.5 w-2.5">
+                      <span className="animate-ping absolute inline-flex h-2.5 w-2.5 rounded-full bg-cyan-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500" />
+                    </span>
+                  )}
                 </Link>
               </li>
             );

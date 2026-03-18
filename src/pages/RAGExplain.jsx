@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import api from "../api/config.js";
 import Loader from "../components/Loader.jsx";
+import { useScanState } from "../context/ScanStateContext.jsx";
 import {
   BookOpen,
   AlertTriangle,
@@ -86,19 +86,16 @@ const highlightAndFormatText = (text) => {
 /* ================= COMPONENT ================= */
 
 const RAGExplain = () => {
+  const { ragState, startRagExplain, clearRagState } = useScanState();
+  const { isLoading, result, error } = ragState;
+
+  // Local state: form inputs only
   const [threatType, setThreatType] = useState("Malicious URL");
   const [showDropdown, setShowDropdown] = useState(false);
   const [context, setContext] = useState("");
-  const [result, setResult] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
 
   const handleExplain = async (e) => {
     e.preventDefault();
-
-    setError(null);
-    setIsLoading(true);
-    setResult(null);
 
     let contextData = { raw_input: context };
 
@@ -111,21 +108,7 @@ const RAGExplain = () => {
       }
     } catch {}
 
-    try {
-      const res = await api.post("/rag/explain", {
-        threat_type: threatType,
-        context_data: contextData,
-      });
-
-      setResult(res.data);
-    } catch (err) {
-      setError(
-        err.response?.data?.detail ||
-          "AI Explanation Failed due to a server or network issue."
-      );
-    } finally {
-      setIsLoading(false);
-    }
+    startRagExplain(threatType, contextData); // fires and forgets — result stored in context
   };
 
   return (
@@ -216,10 +199,11 @@ const RAGExplain = () => {
               />
             </div>
 
-            {error && (
-              <p className="text-red-400 text-sm bg-red-900/30 p-2 rounded">
-                ⚠ {error}
-              </p>
+            {error && !isLoading && (
+              <div className="text-red-400 text-sm bg-red-900/30 p-2 rounded flex justify-between items-center">
+                <span>⚠ {error}</span>
+                <button onClick={clearRagState} className="text-xs underline hover:text-red-200 ml-2">Dismiss</button>
+              </div>
             )}
 
             <button
@@ -249,17 +233,11 @@ const RAGExplain = () => {
             </div>
           )}
 
-          {isLoading && (
-            <div className="text-center py-20">
-              <Loader />
-              <p className="text-cyan-400 mt-4 animate-pulse">
-                AI Analyst is processing threat intelligence...
-              </p>
-            </div>
-          )}
-
-          {result && (
+          {result && !isLoading && (
             <div className="space-y-5 animate-fadeIn">
+              <div className="flex justify-end">
+                <button onClick={clearRagState} className="text-xs text-gray-400 hover:text-cyan-300 underline">Clear result</button>
+              </div>
 
               {/* Summary */}
               <div className="p-4 bg-secondary-dark border border-cyan-500/40 rounded-xl">

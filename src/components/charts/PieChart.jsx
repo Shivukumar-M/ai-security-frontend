@@ -26,7 +26,7 @@ const getColorByLabel = (name) => {
     label.includes("clean") ||
     label.includes("benign")
   ) {
-    return "#00F0FF"; // 🔵 Safe
+    return "#218004"; // 🔵 Safe
   }
   return "#FFC400"; // 🟡 Other
 };
