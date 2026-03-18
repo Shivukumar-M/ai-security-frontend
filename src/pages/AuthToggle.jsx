@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { loginUser, registerUser, getMe } from "../api/auth.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useNavigate } from "react-router-dom";
@@ -14,6 +14,15 @@ const AuthToggle = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [bgMotion, setBgMotion] = useState({
+    x: 50,
+    y: 50,
+    shiftX: 0,
+    shiftY: 0,
+    energy: 0,
+    active: false,
+  });
+  const lastMouseRef = useRef({ x: 50, y: 50, t: 0 });
 
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -77,8 +86,43 @@ const AuthToggle = () => {
     }
   };
 
+  const handleBackgroundMove = (event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width) * 100;
+    const y = ((event.clientY - rect.top) / rect.height) * 100;
+    const shiftX = ((x - 50) / 50) * 16;
+    const shiftY = ((y - 50) / 50) * 12;
+
+    const now = performance.now();
+    const dt = Math.max(16, now - lastMouseRef.current.t);
+    const dx = x - lastMouseRef.current.x;
+    const dy = y - lastMouseRef.current.y;
+    const speed = Math.sqrt(dx * dx + dy * dy) / dt;
+    const energy = Math.min(1, speed * 1.2);
+
+    lastMouseRef.current = { x, y, t: now };
+    setBgMotion({ x, y, shiftX, shiftY, energy, active: true });
+  };
+
+  const resetBackgroundMove = () => {
+    setBgMotion((prev) => ({ ...prev, shiftX: 0, shiftY: 0, energy: 0, active: false }));
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-primary-dark px-4 py-10">
+    <div
+      className="auth-scene min-h-screen flex items-center justify-center relative overflow-hidden bg-primary-dark px-4 py-10"
+      onMouseMove={handleBackgroundMove}
+      onMouseEnter={handleBackgroundMove}
+      onMouseLeave={resetBackgroundMove}
+      style={{
+        "--mx": `${bgMotion.x}%`,
+        "--my": `${bgMotion.y}%`,
+        "--bg-shift-x": `${bgMotion.shiftX}px`,
+        "--bg-shift-y": `${bgMotion.shiftY}px`,
+        "--bg-energy": bgMotion.energy,
+        "--bg-active-opacity": bgMotion.active ? 1 : 0,
+      }}
+    >
 
       {/* ---------- CYBER BACKGROUND GRID ---------- */}
       <div className="absolute inset-0 auth-vignette" />
@@ -99,7 +143,7 @@ const AuthToggle = () => {
 
       {/* ---------- AUTH CARD ---------- */}
       <div className="auth-card-wrap relative z-10 w-full max-w-md rounded-2xl p-[1px]">
-        <div className="bg-secondary-dark/90 p-8 rounded-2xl w-full border border-cyan-300/15 shadow-2xl backdrop-blur-md relative overflow-hidden">
+        <div className="bg-[#1a2129]/95 p-8 rounded-2xl w-full border border-cyan-300/15 shadow-2xl backdrop-blur-md relative overflow-hidden">
           <div className="pointer-events-none absolute inset-0 auth-card-noise" />
           <div className="pointer-events-none absolute inset-0 auth-card-shimmer" />
 
@@ -188,8 +232,8 @@ const AuthToggle = () => {
 
       <style>{`
         @keyframes authGridDrift {
-          from { transform: translate3d(0, 0, 0); }
-          to { transform: translate3d(-42px, -42px, 0); }
+          from { background-position: 0 0, 0 0; }
+          to { background-position: -42px -42px, -42px -42px; }
         }
 
         @keyframes authScan {
@@ -198,9 +242,14 @@ const AuthToggle = () => {
           100% { transform: translateY(100%); opacity: 0; }
         }
 
+        @keyframes authHoverSweep {
+          0% { background-position: -22% 0, 50% 0, 122% 0; }
+          100% { background-position: 12% 0, 50% 0, 88% 0; }
+        }
+
         @keyframes authBlobFloat {
           0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
-          50% { transform: translate3d(0, -16px, 0) scale(1.05); }
+          50% { transform: translate3d(0, -10px, 0) scale(1.03); }
         }
 
         @keyframes authCardEnter {
@@ -210,7 +259,7 @@ const AuthToggle = () => {
 
         @keyframes authCardFloat {
           0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-5px); }
+          50% { transform: translateY(-3px); }
         }
 
         @keyframes authBorderSpin {
@@ -220,12 +269,24 @@ const AuthToggle = () => {
 
         @keyframes authIconFloat {
           0%, 100% { transform: translateY(0); opacity: 0.25; }
-          50% { transform: translateY(-10px); opacity: 0.38; }
+          50% { transform: translateY(-7px); opacity: 0.35; }
         }
 
         @keyframes authShimmer {
-          0% { transform: translateX(-120%); }
-          100% { transform: translateX(160%); }
+          0% {
+            transform: translateX(-180%);
+            opacity: 0;
+          }
+          15% {
+            opacity: 0.55;
+          }
+          85% {
+            opacity: 0.55;
+          }
+          100% {
+            transform: translateX(220%);
+            opacity: 0;
+          }
         }
 
         @keyframes authTitleGlow {
@@ -238,15 +299,36 @@ const AuthToggle = () => {
             radial-gradient(circle at 12% 10%, rgba(34, 211, 238, 0.12), transparent 35%),
             radial-gradient(circle at 88% 86%, rgba(45, 212, 191, 0.1), transparent 42%),
             linear-gradient(180deg, #13161a 0%, #111317 100%);
+          transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
         }
 
         .auth-grid {
-          opacity: 0.4;
+          opacity: 0.52;
+          position: relative;
           background-image:
-            linear-gradient(rgba(0, 240, 255, 0.14) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(0, 240, 255, 0.14) 1px, transparent 1px);
-          background-size: 36px 36px;
-          animation: authGridDrift 22s linear infinite;
+            linear-gradient(rgba(0, 240, 255, 0.18) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 240, 255, 0.18) 1px, transparent 1px);
+          background-size: 54px 54px, 54px 54px;
+          animation: authGridDrift 32s linear infinite;
+          transition: transform 760ms cubic-bezier(0.22, 1, 0.36, 1), opacity 480ms ease;
+        }
+
+        .auth-grid::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background:
+            linear-gradient(100deg, transparent 0%, rgba(34, 211, 238, calc(0.08 + var(--bg-energy) * 0.18)) 40%, transparent 80%),
+            radial-gradient(circle at var(--mx) var(--my), rgba(34, 211, 238, calc(0.12 + var(--bg-energy) * 0.2)), transparent 32%),
+            linear-gradient(-100deg, transparent 0%, rgba(45, 212, 191, calc(0.07 + var(--bg-energy) * 0.16)) 42%, transparent 84%);
+          background-size: 28% 100%, 100% 100%, 28% 100%;
+          background-repeat: no-repeat;
+          background-position: -22% 0, 50% 0, 122% 0;
+          animation: authHoverSweep 2.2s ease-in-out infinite alternate;
+          opacity: calc(var(--bg-active-opacity) * (0.3 + var(--bg-energy) * 0.4));
+          transition: opacity 460ms ease;
+          mix-blend-mode: screen;
+          pointer-events: none;
         }
 
         .auth-scanlines::before {
@@ -256,11 +338,15 @@ const AuthToggle = () => {
           right: 0;
           height: 22%;
           background: linear-gradient(180deg, rgba(34, 211, 238, 0), rgba(34, 211, 238, 0.22), rgba(34, 211, 238, 0));
-          animation: authScan 6.8s linear infinite;
+          animation: authScan 8.8s linear infinite;
+        }
+
+        .auth-scanlines {
+          transition: transform 840ms cubic-bezier(0.22, 1, 0.36, 1);
         }
 
         .auth-blob {
-          animation: authBlobFloat 10s ease-in-out infinite;
+          animation: authBlobFloat 14s ease-in-out infinite;
         }
 
         .auth-blob-delay {
@@ -268,7 +354,7 @@ const AuthToggle = () => {
         }
 
         .auth-float-icon {
-          animation: authIconFloat 5.6s ease-in-out infinite;
+          animation: authIconFloat 8s ease-in-out infinite;
         }
 
         .auth-float-icon-delay {
@@ -278,7 +364,7 @@ const AuthToggle = () => {
         .auth-card-wrap {
           background: linear-gradient(120deg, rgba(34, 211, 238, 0.18), rgba(45, 212, 191, 0.2), rgba(34, 211, 238, 0.18));
           background-size: 180% 180%;
-          animation: authCardEnter 0.65s ease-out both, authCardFloat 7s ease-in-out 0.7s infinite, authBorderSpin 8s linear infinite;
+          animation: authCardEnter 0.65s ease-out both, authCardFloat 10s ease-in-out 0.7s infinite, authBorderSpin 9s linear infinite;
           box-shadow: 0 28px 90px rgba(0, 0, 0, 0.55);
         }
 
@@ -292,10 +378,26 @@ const AuthToggle = () => {
           content: "";
           position: absolute;
           inset: 0;
-          width: 45%;
-          transform: translateX(-120%);
+          left: -20%;
+          width: 60%;
+          transform: translateX(-180%);
+          opacity: 0;
           background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.08), transparent);
-          animation: authShimmer 6s ease-in-out infinite;
+          animation: authShimmer 7.8s ease-in-out infinite;
+          will-change: transform, opacity;
+        }
+
+        .auth-scene:hover .auth-vignette {
+          transform: translate3d(calc(var(--bg-shift-x) * 0.22), calc(var(--bg-shift-y) * 0.22 - 8px), 0) scale(1.02);
+        }
+
+        .auth-scene:hover .auth-grid {
+          transform: translate3d(calc(var(--bg-shift-x) * 0.65), calc(var(--bg-shift-y) * 0.65 - 12px), 0) scale(1.03);
+          opacity: 0.52;
+        }
+
+        .auth-scene:hover .auth-scanlines {
+          transform: translate3d(calc(var(--bg-shift-x) * 0.4), calc(var(--bg-shift-y) * 0.4 - 6px), 0);
         }
 
         .auth-title-glow {

@@ -40,7 +40,7 @@ const modules = [
   },
 ];
 
-const DECRYPT_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#@!$%";
+const DECRYPT_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#@!$%";
 
 function useDecryptText(target, delay = 0) {
   const [value, setValue] = useState("");
@@ -128,12 +128,12 @@ function Home() {
             Next-Gen Neural Defense Active
           </div>
 
-          <h1 className="hero-title max-w-7xl text-5xl font-black leading-[0.95] md:text-7xl">
-            <span className="hero-decrypt-line whitespace-nowrap">{decryptLine1}</span>
+          <h1 className="hero-title max-w-7xl text-4xl font-black leading-[0.95] sm:text-5xl md:text-7xl">
+            <span className="hero-decrypt-line md:whitespace-nowrap">{decryptLine1}</span>
             <br />
-            <span className="hero-decrypt-line whitespace-nowrap text-cyan-300">{decryptLine2}</span>
+            <span className="hero-decrypt-line text-cyan-300 md:whitespace-nowrap">{decryptLine2}</span>
             <br />
-            <span className="hero-decrypt-line whitespace-nowrap hero-decrypt-final">{decryptLine3}</span>
+            <span className="hero-decrypt-line hero-decrypt-final md:whitespace-nowrap">{decryptLine3}</span>
           </h1>
 
           <p className="mt-5 max-w-2xl text-sm text-gray-300 md:text-base">
@@ -162,8 +162,8 @@ function Home() {
               <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_35%,rgba(0,0,0,0.6)_100%)]" />
               <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.45)_0%,transparent_35%,rgba(0,0,0,0.35)_100%)]" />
             </div>
-            <div className="mt-3 flex items-center justify-between px-2 text-xs text-cyan-200/80">
-              <span>Encrypted network telemetry stream</span>
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 px-2 text-xs text-cyan-200/80">
+              <span className="max-w-[70%] sm:max-w-none">Encrypted network telemetry stream</span>
               <span className="text-2xl font-black text-white">99.9%</span>
             </div>
           </div>
@@ -240,11 +240,23 @@ function Home() {
             </div>
 
             <div className="rounded-2xl border border-cyan-500/20 bg-[#071018]/70 p-4">
-              <img
-                src="./landing.png?auto=format&fit=crop&w=1200&q=80"
-                className="feature-image h-[360px] w-full rounded-xl object-cover opacity-85"
-                alt="Malware detection and cybersecurity analysis"
-              />
+              <a
+                href="https://shivukumar.vercel.app/"
+                target="_blank"
+                rel="noreferrer"
+                className="profile-image-link group relative block rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/80"
+                aria-label="Visit developer profile"
+                title="Tap to visit developer profile"
+              >
+                <img
+                  src="./landing.png?auto=format&fit=crop&w=1200&q=80"
+                  className="feature-image h-[360px] w-full rounded-xl object-cover opacity-85"
+                  alt="Malware detection and cybersecurity analysis"
+                />
+                <span className="pointer-events-none absolute left-3 top-3 rounded-full border border-cyan-300/40 bg-black/55 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-cyan-200/95 shadow-[0_0_18px_rgba(34,211,238,0.25)]">
+                  Tap image to view profile
+                </span>
+              </a>
               <div className="mt-4 flex items-start gap-3 rounded-lg border border-cyan-400/20 bg-black/35 p-3 text-xs text-gray-300">
                 <CircleCheckBig className="mt-0.5 h-4 w-4 text-cyan-300" />
                 <p>Encrypted and secure. AI models run in controlled, compliance-ready environments.</p>
@@ -305,7 +317,7 @@ function Home() {
 
               <div className="flex flex-col items-start gap-2 text-sm text-gray-300">
                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-cyan-300">Developer</p>
-                <p className="font-semibold text-white">Shivu Kumar Agasi Mundina</p>
+                <p className="font-semibold text-white">Shivu Kumar A M</p>
                 <p className="text-sm text-gray-300">MCA Final Year</p>
                 <p className="text-sm text-gray-400">AI and Cybersecurity</p>
 
@@ -416,6 +428,35 @@ function Home() {
 
         .feature-image {
           animation: heroFloat 9s ease-in-out infinite;
+        }
+
+        .profile-image-link {
+          border: 1px solid rgba(34, 211, 238, 0.2);
+          box-shadow: 0 0 0 rgba(34, 211, 238, 0);
+          transition: transform 180ms ease, border-color 180ms ease, box-shadow 220ms ease;
+        }
+
+        .profile-image-link:hover,
+        .profile-image-link:focus-visible {
+          transform: translateY(-2px);
+          border-color: rgba(103, 232, 249, 0.65);
+          box-shadow: 0 0 0 1px rgba(103, 232, 249, 0.2), 0 0 22px rgba(34, 211, 238, 0.35);
+        }
+
+        .profile-image-link::after {
+          content: "";
+          position: absolute;
+          inset: -2px;
+          border-radius: 0.9rem;
+          border: 1px solid rgba(34, 211, 238, 0.35);
+          opacity: 0;
+          transition: opacity 220ms ease;
+          pointer-events: none;
+        }
+
+        .profile-image-link:hover::after,
+        .profile-image-link:focus-visible::after {
+          opacity: 1;
         }
 
         .module-card {
